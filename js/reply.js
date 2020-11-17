@@ -1,4 +1,4 @@
-/*
+﻿/*
 MIT License
 
 Copyright (c) 2020 Skyrah1
@@ -24,6 +24,12 @@ var messageString = "";
 // your Discord bot functionality.
 // Push your Commands into this list.
 const validCommands = [];
+
+
+const rock = `🪨`
+const paper = `📰`
+const scissors = `✂️`
+const activeGames = {};
 
 //-----------Commands-----------//
 
@@ -57,6 +63,88 @@ validCommands.push(new commandLib.Command(
         return true;
     }
 ));
+
+validCommands.push(new commandLib.Command(
+    "startGame",
+    "",
+    async () => {
+        let players = message.mentions.users.array();
+        if (players.length != 2){
+            console.log(players);
+            message.channel.send("Please start a game mentioning only 2 players (that's how Rock Paper Scissors works!)");
+        } else {
+            //TSUNOMAKI TSUNOMAKI TSUNOMAKI TSUNOMAKI
+            //TSU-NO-MA-KI-JAN-KEN-PON!!!!
+            await startGame(players).then(winner => {
+                if (winner != null){
+                    message.channel.send(`${players[0]} and ${players[1]} have competed. The winner is ${winner}!`);
+                } else {
+                    message.channel.send(`${players[0]} and ${players[1]} have drawed!`);
+                }
+            });
+            
+        }
+        return true;
+    }
+))
+
+async function startGame(players){
+    var winner;
+    promise1 = getResult(players[0], players[1]);
+    promise2 = getResult(players[1], players[0]);
+    await Promise.all([promise1, promise2]).then((results) => {
+        winner = decideWinner(players[0], players[1], results[0], results[1]);
+    });
+    return winner;
+}
+
+function decideWinner(player1, player2, result1, result2){
+    if ((result1 == rock && result2 == paper)
+    || (result1 == paper && result2 == scissors)
+    || (result1 == scissors && result2 == rock)){
+        return player2;
+    } else if ((result1 == rock && result2 == scissors)
+    || (result1 == paper && result2 == rock)
+    || (result1 == scissors && result2 == paper)){
+        return player1;
+    } else {
+        return null;
+    }
+}
+
+async function getResult(player, opponent){
+    
+    result = "";
+    
+    try {
+        await player.send(`You're playing against ${opponent.tag}! Choose something to play by reacting to this message!`)
+        .then(async function (message) {
+            try {
+                const filter = (reaction, user) => {
+	                return [rock, paper, scissors].includes(reaction.emoji.name) && user.id != message.author.id;
+                };
+                await message.react(rock);
+                await message.react(paper);
+                await message.react(scissors);
+                await message.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
+	            .then(collected => {
+                    try {
+                        result = collected.first().emoji.name;
+                    } catch (e){
+                        console.log("lol");
+                    }
+		            
+	            })
+            } catch (e){
+                console.log("help");
+            }
+            
+        })
+    } catch (e){
+        console.log(rock + ", " + paper + ", " + scissors);
+    }
+    return result;
+}
 
 validCommands.push(new commandLib.Command(
     "help",
