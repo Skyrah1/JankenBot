@@ -30,6 +30,9 @@ const rock = `🪨`
 const paper = `📰`
 const scissors = `✂️`
 const activeGames = {};
+const queue = [];
+const winners = [];
+let tournamentActive = false;
 
 //-----------Commands-----------//
 
@@ -87,6 +90,89 @@ validCommands.push(new commandLib.Command(
         return true;
     }
 ))
+
+function addToQueue(player){
+    if (tournamentActive){
+        queue.push(player);
+    }
+    
+}
+
+async function startRound(players, isTournament, gameId){
+    let points = [0, 0];
+    let round = 1;
+    let winMessage = `You win Round ${round}!`
+    let loseMessage = `You lose Round ${round}!`
+    let winIndex;
+    let loseIndex;
+    while (points[0] < 2 && points[1] < 2){
+        let winner = await startGame(players);
+        let winIndex = players.indexOf(winner);
+        let loseIndex = 1 - winIndex;
+        points[winIndex]++;
+        await players[winIndex].send(winMessage + `\n\nYou have ${points[winIndex]} points, while ${players[loseIndex]} has ${points[loseIndex]} points.`);
+        await players[loseIndex].send(loseMessage + `\n\nYou have ${points[loseIndex]} points, while ${players[winIndex]} has ${points[winIndex]} points.`);
+
+        round++;
+    }
+
+    finalWinMessage = `You have won this round!!!!`;
+    finalLoseMessage = `Sorry, but it looks like you've lost...`;
+    players[winIndex].send(finalWinMessage);
+    players[loseIndex].send(finalLoseMessage);
+
+    if (isTournament){
+        delete activeGames[gameId];
+    }
+
+    return players[winIndex];
+}
+
+function waitFor(conditionFunc){
+    const poll = resolve => {
+        if (conditionFunc()) {
+            resolve();
+        } else {
+            setTimeout(_ => poll(resolve), 100);
+        }
+    }
+    return new Promise(poll);
+}
+
+async function startTournament(){
+    let gameId = 0;
+    while (queue.length > 1){
+        // move everyone in queue to activeGames
+        if (queue.length % 2 != 0){
+            // handle odd stuff here
+        }
+
+        while (queue.length > 0){
+            let players = [];
+            players.push(queue.pop());
+            players.push(queue.pop());
+            activeGames[gameId] = players;
+            gameId++;
+        }
+
+        // move people who win the games to winners
+        let keys = Object.keys(activeGames);
+        for (int i = activeGames.length - 1; i >= 0; i++){
+            startRound(activeGames[keys[i]], true, keys[i]).then(winner => {
+               winners.push(winner);
+            });
+        }
+
+        // once activeGames is empty, move winners to queue
+        await waitFor(_ => activeGames.length == 0);
+        while (winners.length > 0){
+            queue.push(winners.pop());
+        }
+    }
+
+    // return the winner
+    return queue.pop();
+}
 
 async function startGame(players){
     var winner;
