@@ -107,11 +107,18 @@ async function startRound(players, isTournament, gameId){
     let loseIndex;
     while (points[0] < 2 && points[1] < 2){
         let winner = await startGame(players);
-        let winIndex = players.indexOf(winner);
-        let loseIndex = 1 - winIndex;
-        points[winIndex]++;
-        await players[winIndex].send(winMessage + `\n\nYou have ${points[winIndex]} points, while ${players[loseIndex]} has ${points[loseIndex]} points.`);
-        await players[loseIndex].send(loseMessage + `\n\nYou have ${points[loseIndex]} points, while ${players[winIndex]} has ${points[winIndex]} points.`);
+        if (winner != null){
+            winIndex = players.indexOf(winner);
+            loseIndex = 1 - winIndex;
+            points[winIndex]++;
+            await players[winIndex].send(winMessage + `\n\nYou have ${points[winIndex]} points, while ${players[loseIndex]} has ${points[loseIndex]} points.`);
+            await players[loseIndex].send(loseMessage + `\n\nYou have ${points[loseIndex]} points, while ${players[winIndex]} has ${points[winIndex]} points.`);
+        } else {
+            for (let i = 0; i < players.length; i++){
+                await players[i].send("You have both drawn this round!");
+            }
+        }
+        
 
         round++;
     }
@@ -142,11 +149,13 @@ function waitFor(conditionFunc){
 async function startTournament(){
     let gameId = 0;
     while (queue.length > 1){
-        // move everyone in queue to activeGames
+        
+        // handle the case if the queue length is odd here
         if (queue.length % 2 != 0){
-            // handle odd stuff here
+            
         }
 
+        // move everyone in queue to activeGames
         while (queue.length > 0){
             let players = [];
             players.push(queue.pop());
@@ -155,9 +164,9 @@ async function startTournament(){
             gameId++;
         }
 
-        // move people who win the games to winners
+        // start games and move people who win the games to winners
         let keys = Object.keys(activeGames);
-        for (int i = activeGames.length - 1; i >= 0; i++){
+        for (let i = activeGames.length - 1; i >= 0; i++){
             startRound(activeGames[keys[i]], true, keys[i]).then(winner => {
                winners.push(winner);
             });
@@ -170,7 +179,7 @@ async function startTournament(){
         }
     }
 
-    // return the winner
+    // return the final winner
     return queue.pop();
 }
 
