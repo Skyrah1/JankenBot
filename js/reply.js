@@ -197,7 +197,7 @@ async function startTournament(channel){
         let remaining = Object.keys(queue).filter(player => queue[player]);
         messageStr = "Remaining players:\n";
         for(let i = 0; i < remaining.length; i++){
-            messageStr += `${remaining[i]}\n`
+            messageStr += `${channel.members.get(remaining[i]).user.toString()}\n`
         }
         channel.send(messageStr);
 
