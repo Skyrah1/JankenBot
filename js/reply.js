@@ -30,7 +30,7 @@ const rock = `🪨`
 const paper = `📰`
 const scissors = `✂️`
 const activeGames = {};
-const queue = [];
+const queue = {};
 const winners = [];
 let tournamentActive = false;
 
@@ -89,16 +89,56 @@ validCommands.push(new commandLib.Command(
         }
         return true;
     }
-))
+));
+
+validCommands.push(new commandLib.Command(
+    "queue",
+    "",
+    () => {
+        let players = message.mentions.users.array();
+        let str = "Adding players...\n\n";
+        for (let i = 0; i < players.length; i++){
+            let added = addToQueue(players[i]);
+            if (added){
+                str += `Added ${players[i]}!\n`;
+            }
+        }
+        if (players.length == 0){
+            str += "No players to be added to the queue."
+        }
+        message.channel.send(str);
+        return true;
+    }
+));
+
+validCommands.push(new commandLib.Command(
+    "startTournament",
+    "",
+    async () => {
+        winner = await startTournament(message.channel);
+        queue[winner] = false;
+        message.channel.send(`The winner is ${message.channel.members.get(winner)}! Congratulations!!!!`);
+        return true;
+    }
+));
 
 function addToQueue(player){
-    if (tournamentActive){
-        queue.push(player);
+    if (!tournamentActive && (!queue.hasOwnProperty(player.id) || !queue[player.id])){
+        queue[player.id] = true;
+        player.send("You have been added to the queue.");
+        return true;
+    } else if (tournamentActive){
+        player.send("Sorry, but the tournament is already active.");
+        return false;
+    } else {
+        player.send("You're already registered, so sit back and relax!");
+        return false;
     }
     
 }
 
 async function startRound(players, isTournament, gameId){
+    console.log("ROUND START");
     let points = [0, 0];
     let round = 1;
     let winMessage = `You win Round ${round}!`
@@ -106,6 +146,7 @@ async function startRound(players, isTournament, gameId){
     let winIndex;
     let loseIndex;
     while (points[0] < 2 && points[1] < 2){
+        console.log(`Round ${round}\n`);
         let winner = await startGame(players);
         if (winner != null){
             winIndex = players.indexOf(winner);
@@ -129,7 +170,7 @@ async function startRound(players, isTournament, gameId){
     players[loseIndex].send(finalLoseMessage);
 
     if (isTournament){
-        delete activeGames[gameId];
+        activeGames[gameId] = true;
     }
 
     return players[winIndex];
@@ -139,48 +180,82 @@ function waitFor(conditionFunc){
     const poll = resolve => {
         if (conditionFunc()) {
             resolve();
+            console.log("yay");
         } else {
-            setTimeout(_ => poll(resolve), 100);
+            //console.log(Object.values(activeGames).filter(v => v !== true));
+            console.log("waiting");
+            setTimeout(_ => poll(resolve), 1000);
         }
     }
     return new Promise(poll);
 }
 
-async function startTournament(){
+async function startTournament(channel){
     let gameId = 0;
-    while (queue.length > 1){
+    tournamentActive = true;
+    while (Object.keys(queue).filter(player => queue[player]).length > 1){
+        let remaining = Object.keys(queue).filter(player => queue[player]);
+        messageStr = "Remaining players:\n";
+        for(let i = 0; i < remaining.length; i++){
+            messageStr += `${remaining[i]}\n`
+        }
+        channel.send(messageStr);
+
         
         // handle the case if the queue length is odd here
-        if (queue.length % 2 != 0){
-            
+        if (remaining.length % 2 != 0){
+            let waiting = Object.keys(queue).filter(player => queue[player]);
+            let rand = Math.floor(Math.random() * waiting.length);
+            winners.push(waiting[rand]);
+            console.log(waiting[rand]);
+            channel.members.get(waiting[rand]).send("You got lucky this round and don't need to compete! Use this time to get ready for the next round!");
+            queue[waiting[rand]] = false;
         }
 
         // move everyone in queue to activeGames
-        while (queue.length > 0){
+        let waiting = Object.keys(queue).filter(player => queue[player]);
+        console.log("Waiting players: \n");
+        console.log(waiting);
+        while (waiting.length > 0){
             let players = [];
-            players.push(queue.pop());
-            players.push(queue.pop());
+            console.log(channel.members);
+            players.push(channel.members.get(waiting.pop())["user"]);
+            players.push(channel.members.get(waiting.pop())["user"]);
+            console.log(players);
+            queue[players[0].id] = false;
+            queue[players[1].id] = false;
+            console.log(queue);
             activeGames[gameId] = players;
             gameId++;
         }
 
         // start games and move people who win the games to winners
-        let keys = Object.keys(activeGames);
-        for (let i = activeGames.length - 1; i >= 0; i++){
-            startRound(activeGames[keys[i]], true, keys[i]).then(winner => {
-               winners.push(winner);
-            });
+        //let keys = Object.keys(activeGames);
+        for (let i = Object.keys(activeGames).length - 1; i >= 0; i--){
+            console.log(`${i}, ${activeGames[i]}\n`);
+            if (activeGames[i] !== true){
+                startRound(activeGames[i], true, i).then(winner => {
+                   winners.push(winner.id);
+                   console.log(`${winner.id} won a game.`);
+                });
+            }
+            
         }
-
+        gameId = 0;
+        
+        console.log("Waiting for games to finish...");
+        console.log(activeGames);
         // once activeGames is empty, move winners to queue
-        await waitFor(_ => activeGames.length == 0);
+        await waitFor(_ => Object.values(activeGames).filter(v => v !== true).length == 0);
+        console.log("Done!");
         while (winners.length > 0){
-            queue.push(winners.pop());
+            queue[winners.pop()] = true;
         }
     }
 
     // return the final winner
-    return queue.pop();
+    tournamentActive = false;
+    return Object.keys(queue).filter(player => queue[player]).pop();
 }
 
 async function startGame(players){
@@ -225,6 +300,7 @@ async function getResult(player, opponent){
 	            .then(collected => {
                     try {
                         result = collected.first().emoji.name;
+                        message.delete(1000);
                     } catch (e){
                         console.log("lol");
                     }
