@@ -300,7 +300,6 @@ async function getResult(player, opponent){
 	            .then(collected => {
                     try {
                         result = collected.first().emoji.name;
-                        message.delete(1000);
                     } catch (e){
                         console.log("lol");
                     }
