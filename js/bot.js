@@ -23,6 +23,8 @@ const token = readline.question("Please enter your bot token: ", {
     hideEchoBack: true,
 });
 
+const creatorID = readline.question("Please enter the creator's client ID: ");
+
 // This function is performed when users attempt to enter an unknown command.
 // NOTE: If your bot performs both this function AND the one you intended to
 // work, make sure the function in your Command returns true.
@@ -51,7 +53,7 @@ client.on("message", msg => {
     let prefix = "!bot ";
     let validMessage = true;
     if (msg.content.startsWith(prefix)){
-        validMessage = reply.reply(prefix, client, msg);
+        validMessage = reply.reply(creatorID, prefix, client, msg);
         if (validMessage){
             console.log("Message sent!");
         }

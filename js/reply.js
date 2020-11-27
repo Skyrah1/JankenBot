@@ -20,6 +20,8 @@ var botClient;
 var message;
 var messageString = "";
 
+var id;
+
 // This list is meant to contain any and all Commands that give
 // your Discord bot functionality.
 // Push your Commands into this list.
@@ -115,9 +117,19 @@ validCommands.push(new commandLib.Command(
     "startTournament",
     "",
     async () => {
-        winner = await startTournament(message.channel);
-        queue[winner] = false;
-        message.channel.send(`The winner is ${message.channel.members.get(winner)}! Congratulations!!!!`);
+        if (id === message.author.id){
+            let contestants = message.member.voice.channel.members.array();
+            console.log(contestants);
+            for (let i = 0; i < contestants.length; i++){
+                await addToQueue(contestants[i]);
+            }
+            let winner = await startTournament(message.channel);
+            queue[winner] = false;
+            message.channel.send(`The winner is ${message.channel.members.get(winner)}! Congratulations!!!!`);
+        } else {
+            message.channel.send("Sorry, but you don't have permission.");
+        }
+        
         return true;
     }
 ));
@@ -337,8 +349,9 @@ validCommands.push(new commandLib.Command(
 
 // This is the function used to execute commands, which is called by
 // client.on("message") in bot.js
-function reply(prefix, client, msg) {
+function reply(creatorID, prefix, client, msg) {
     message = msg;
+    id = creatorID
     messageString = "";
     botClient = client;
     var validMessage = false;
