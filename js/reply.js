@@ -120,6 +120,7 @@ validCommands.push(new commandLib.Command(
         if (id === message.author.id){
             try {
                 let contestants = message.member.voice.channel.members.array();
+                console.log(message.member);
                 console.log(contestants);
                 for (let i = 0; i < contestants.length; i++){
                     await addToQueue(contestants[i]);
