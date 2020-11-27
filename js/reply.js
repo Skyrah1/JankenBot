@@ -118,14 +118,18 @@ validCommands.push(new commandLib.Command(
     "",
     async () => {
         if (id === message.author.id){
-            let contestants = message.member.voice.channel.members.array();
-            console.log(contestants);
-            for (let i = 0; i < contestants.length; i++){
-                await addToQueue(contestants[i]);
+            try {
+                let contestants = message.member.voice.channel.members.array();
+                console.log(contestants);
+                for (let i = 0; i < contestants.length; i++){
+                    await addToQueue(contestants[i]);
+                }
+                let winner = await startTournament(message.channel);
+                queue[winner] = false;
+                message.channel.send(`The winner is ${message.channel.members.get(winner)}! Congratulations!!!!`);
+            } catch {
+                message.channel.send("Something's gone wrong...");
             }
-            let winner = await startTournament(message.channel);
-            queue[winner] = false;
-            message.channel.send(`The winner is ${message.channel.members.get(winner)}! Congratulations!!!!`);
         } else {
             message.channel.send("Sorry, but you don't have permission.");
         }
