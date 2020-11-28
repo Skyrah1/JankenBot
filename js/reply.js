@@ -286,11 +286,13 @@ async function startGame(players){
 }
 
 function decideWinner(player1, player2, result1, result2){
-    if ((result1 == rock && result2 == paper)
+    if ((result1 == "" && result2 != "")
+    || (result1 == rock && result2 == paper)
     || (result1 == paper && result2 == scissors)
     || (result1 == scissors && result2 == rock)){
         return player2;
-    } else if ((result1 == rock && result2 == scissors)
+    } else if ((result2 == "" && result1 != "")
+    || (result1 == rock && result2 == scissors)
     || (result1 == paper && result2 == rock)
     || (result1 == scissors && result2 == paper)){
         return player1;
@@ -304,7 +306,7 @@ async function getResult(player, opponent){
     result = "";
     
     try {
-        await player.send(`You're playing against ${opponent.tag}! Choose something to play by reacting to this message!`)
+        await player.send(`You're playing against ${opponent.tag}! Choose something to play by reacting to this message!\n(You have 2 minutes to respond to this message)`)
         .then(async function (message) {
             try {
                 const filter = (reaction, user) => {
@@ -313,12 +315,13 @@ async function getResult(player, opponent){
                 await message.react(rock);
                 await message.react(paper);
                 await message.react(scissors);
-                await message.awaitReactions(filter, { max: 1, time: 60000, errors: ['time'] })
+                await message.awaitReactions(filter, { max: 1, time: 120000, errors: ['time'] })
 	            .then(collected => {
                     try {
                         result = collected.first().emoji.name;
                     } catch (e){
-                        console.log("lol");
+                        console.log("RIP");
+                        players.send("Sorry, but your time is up. This round goes to your opponent.");
                     }
 		            
 	            })
