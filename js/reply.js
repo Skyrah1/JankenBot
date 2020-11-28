@@ -303,7 +303,7 @@ function decideWinner(player1, player2, result1, result2){
 
 async function getResult(player, opponent){
     
-    result = "";
+    let result = "";
     
     try {
         await player.send(`You're playing against ${opponent.tag}! Choose something to play by reacting to this message!\n(You have 2 minutes to respond to this message)`)
@@ -327,7 +327,7 @@ async function getResult(player, opponent){
 	            })
             } catch (e){
                 console.log("help");
-                players.send("Sorry, but your time is up. This round goes to your opponent.");
+                await player.send("Sorry, but your time is up. This round goes to your opponent.");
                 result = "";
             }
             
@@ -335,6 +335,7 @@ async function getResult(player, opponent){
     } catch (e){
         console.log(rock + ", " + paper + ", " + scissors);
     }
+    console.log("Result: " + result)
     return result;
 }
 
