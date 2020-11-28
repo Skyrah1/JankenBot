@@ -321,12 +321,14 @@ async function getResult(player, opponent){
                         result = collected.first().emoji.name;
                     } catch (e){
                         console.log("RIP");
-                        players.send("Sorry, but your time is up. This round goes to your opponent.");
+                        
                     }
 		            
 	            })
             } catch (e){
                 console.log("help");
+                players.send("Sorry, but your time is up. This round goes to your opponent.");
+                result = "";
             }
             
         })
