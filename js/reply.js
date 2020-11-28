@@ -286,18 +286,29 @@ async function startGame(players){
 }
 
 function decideWinner(player1, player2, result1, result2){
-    if ((result1 == "" && result2 != "")
-    || (result1 == rock && result2 == paper)
+    if ((result1 == rock && result2 == paper)
     || (result1 == paper && result2 == scissors)
     || (result1 == scissors && result2 == rock)){
         return player2;
-    } else if ((result2 == "" && result1 != "")
-    || (result1 == rock && result2 == scissors)
+    } else if ((result1 == rock && result2 == scissors)
     || (result1 == paper && result2 == rock)
     || (result1 == scissors && result2 == paper)){
         return player1;
     } else {
-        return null;
+        if (result1 == "" && result2 == ""){
+            let rand = Math.floor(Math.random() * 2);
+            if (rand == 0){
+                return player1;
+            } else {
+                return player2;
+            }
+        } else if (result1 == ""){
+            return player2;
+        } else if (result2 == ""){
+            return player1;
+        } else {
+            return null;
+        }
     }
 }
 
@@ -327,7 +338,7 @@ async function getResult(player, opponent){
 	            })
             } catch (e){
                 console.log("help");
-                await player.send("Sorry, but your time is up. This round goes to your opponent.");
+                await player.send("Sorry, but your time is up.");
                 result = "";
             }
             
